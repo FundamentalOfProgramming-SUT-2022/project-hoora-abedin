@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <dirent.h>
 
 char file_name[50] = "", name[1000] = "", clipboard[10000] = "",last_char, *content, *input_str, *input_str2, grep_lines[1000][10000];
 int col, row, isBack, length, grep_c = 0;
@@ -1516,6 +1517,44 @@ void grep() {
     }
 }
 
+void tree(char *path, int tmp, int depth)
+{
+    struct dirent *d;
+    DIR *dir = opendir(path);
+    char tmp_path[10000];
+    if (!dir) return;
+    while ((d = readdir(dir)) != NULL)
+    {
+        if (strcmp(d->d_name, ".") != 0 && strcmp(d->d_name, "..") != 0)
+        {
+            for (int i = 0; i < 2 * tmp; i++)
+            {
+                if (i % 2 == 0)
+                    printf("%c", '|');
+                else
+                    printf(" ");
+            }
+            printf("%s%s\n", "|__", d->d_name);
+            if (depth == -2 || tmp < depth)
+            {
+                int j;
+                int n = strlen(path);
+                for (j = 0; j < n; j++)
+                    tmp_path[j] = path[j];
+                tmp_path[j] = '/';
+                j++;
+                int len = strlen(d->d_name);
+                int i;
+                for (i = 0; i < len; i++)
+                    tmp_path[j + i] = d->d_name[i];
+                tmp_path[j + i] = '\0';
+                tree (tmp_path ,tmp + 1, depth);
+            }
+        }
+    }
+    closedir(dir);
+}
+
 int main()
 {
     mkdir("root");
@@ -1551,8 +1590,11 @@ int main()
             auto_indent();
         else if(strcmp(command,"compare") == 0)
             compare();
-        else if(strcmp(command,"tree") == 0)
-            printf("tree");
+        else if(strcmp(command,"tree") == 0) {
+            int depth;
+            scanf(" %d", &depth);
+            tree("root", 0, depth);
+        }
         else
             invalid_name();
         printf("\n~ ");
